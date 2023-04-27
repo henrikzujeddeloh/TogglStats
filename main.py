@@ -86,12 +86,35 @@ def show_heatmap(data_frame):
 
 
 
+def show_weekday(data_frame):
+
+    # calculate number of weeks for normalization
+    first_day = data_frame['Start date'].iloc[0]
+    last_day = data_frame['Start date'].iloc[-1]
+    num_weeks = (last_day-first_day).days/7
+
+    # creates new weekdays column
+    data_frame['weekday'] = data_frame['Start date'].dt.day_name()
+
+    # puts days of week in correct order
+    week_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    data_frame['weekday'] = pd.Categorical(data_frame['weekday'], categories=week_days, ordered=True)
+    data_frame = data_frame.sort_values('weekday')
+
+    # average duration per weekday
+    data_frame = data_frame.groupby(["weekday"])['Duration'].sum()/num_weeks
+
+    # generates output
+    fig_weekday, axs_weekday = plt.subplots(figsize=[WIDTH, HEIGHT])
+    data_frame.plot(kind='bar', ax=axs_weekday, rot=0, ylabel="Average Duration [minutes]")
+
 
 # instantiate argument parser
 parser = argparse.ArgumentParser()
 
 # define arguments
 parser.add_argument("--heatmap", help="output heatmap of time entries", action="store_true")
+parser.add_argument("--weekday", help="output focus duration by weekday", action="store_true")
 args = parser.parse_args()
 
 
@@ -104,6 +127,8 @@ df = create_df(DATA_DIR)
 if args.heatmap:
     show_heatmap(df)
 
-print(df.info())
+if args.weekday:
+    show_weekday(df)
+
 
 plt.show()
